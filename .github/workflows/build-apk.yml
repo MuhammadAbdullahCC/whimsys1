@@ -41,16 +41,13 @@ jobs:
 
       - name: Create Capacitor config
         run: |
-          cat > capacitor.config.ts <<'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
-
-          const config: CapacitorConfig = {
-            appId: 'com.whimsy.s1',
-            appName: 'Whimsy S1',
-            webDir: 'www'
-          };
-
-          export default config;
+          rm -f capacitor.config.ts
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.whimsy.s1",
+            "appName": "Whimsy S1",
+            "webDir": "www"
+          }
           EOF
 
       - name: Create Android project
