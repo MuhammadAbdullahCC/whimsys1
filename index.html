@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Whimsy S1</title>
+  <link rel="manifest" href="manifest.json" />
+   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23c58bcf'/%3E%3Ctext x='50' y='50' font-size='60' text-anchor='middle' dy='.35' font-family='Segoe UI, sans-serif' fill='white'%3E🪼%3C/text%3E%3C/svg%3E" />
+  
+  <style>
+    /* ── RESET & BASE ───────────────────────────────────────────────────── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #f5edf8;
+      color: #3d2a4a;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* ── APP CONTAINER ──────────────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      background: rgba(255, 248, 250, 0.85);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 40px rgba(180, 80, 200, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 501px) {
+      #app { border-radius: 28px; margin-top: 12px; height: calc(100% - 24px); }
+    }
+
+    /* ── HEADER ──────────────────────────────────────────────────────────── */
+    .header {
+      padding: 14px 20px 10px 20px;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #6b4b7a;
+      letter-spacing: 0.3px;
+    }
+    .header-title span { color: #c58bcf; }
+    .header-status {
+      font-size: 12px;
+      color: #8a6a9a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-status .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #6fcf97;
+      display: inline-block;
+    }
+
+    /* ── MAIN CONTENT ────────────────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── TABS ───────────────────────────────────────────────────────────── */
+    .tab-content {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      overflow-y: auto;
+      padding: 12px 16px 8px 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      background: rgba(255, 248, 250, 0.2);
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-content.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tab-content::-webkit-scrollbar { width: 3px; }
+    .tab-content::-webkit-scrollbar-thumb { background: #d4b0d8; border-radius: 8px; }
+
+    /* ── CHAT TAB ───────────────────────────────────────────────────────── */
+    #chatTab {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px 8px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #d4b0d8; border-radius: 8px; }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      animation: floatUp 0.3s ease-out;
+    }
+    .message.user { align-self: flex-end; align-items: flex-end; }
+    .message.bot { align-self: flex-start; align-items: flex-start; }
+    .message.error { align-self: center; align-items: center; max-width: 92%; }
+
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(12px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      box-shadow: 0 2px 8px rgba(180, 120, 200, 0.08);
+    }
+    .message.user .bubble {
+      background: linear-gradient(135deg, #f6c8d8, #e8b4d8);
+      color: #3d2a4a;
+      border-bottom-right-radius: 4px;
+    }
+    .message.bot .bubble {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(4px);
+      color: #3d2a4a;
+      border-bottom-left-radius: 4px;
+    }
+    .message.error .bubble {
+      background: #ffe0e6;
+      color: #d05070;
+      border: 1px solid #ffb0b8;
+    }
+
+    .message .meta {
+      font-size: 10px;
+      color: #b08ab8;
+      margin: 3px 8px 1px 8px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .message.user .meta { justify-content: flex-end; }
+    .message.bot .meta { justify-content: flex-start; }
+    .message .avatar-icon { font-size: 13px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(4px);
+      border-radius: 20px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+      box-shadow: 0 2px 8px rgba(180,120,200,0.06);
+    }
+    .typing-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #c58bcf;
+      animation: pulse 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse {
+      0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .system-msg {
+      text-align: center;
+      font-size: 11px;
+      color: #b08ab8;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(2px);
+      padding: 4px 14px;
+      border-radius: 16px;
+      align-self: center;
+      max-width: 90%;
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 10px 16px 12px 16px;
+      background: rgba(255, 248, 250, 0.5);
+      backdrop-filter: blur(4px);
+      border-top: 1px solid rgba(255,255,255,0.3);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    .input-area textarea {
+      flex: 1;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(200,160,210,0.25);
+      border-radius: 24px;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 15px;
+      color: #3d2a4a;
+      resize: none;
+      outline: none;
+      min-height: 44px;
+      max-height: 120px;
+      line-height: 1.4;
+      transition: 0.2s;
+    }
+    .input-area textarea:focus { border-color: #c58bcf; }
+    .input-area .send-btn {
+      background: linear-gradient(135deg, #c58bcf, #a855f7);
+      border: none;
+      border-radius: 30px;
+      width: 48px;
+      height: 48px;
+      font-size: 22px;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(165, 85, 247, 0.25);
+    }
+    .input-area .send-btn:active { transform: scale(0.92); }
+    .input-area .send-btn:disabled { opacity: 0.5; }
+
+    /* ── FAB ────────────────────────────────────────────────────────────── */
+    .fab {
+      position: absolute;
+      bottom: 80px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #c58bcf, #a855f7);
+      border: none;
+      color: white;
+      font-size: 28px;
+      box-shadow: 0 6px 20px rgba(165, 85, 247, 0.3);
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .fab:active { transform: scale(0.90); }
+
+    /* ── HISTORY TAB ────────────────────────────────────────────────────── */
+    .history-item {
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(2px);
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .history-item:active { background: rgba(200,160,210,0.15); }
+    .history-item .title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #3d2a4a;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-right: 8px;
+    }
+    .history-item .time {
+      font-size: 11px;
+      color: #b08ab8;
+      margin-right: 8px;
+    }
+    .history-item .del-btn {
+      background: none;
+      border: none;
+      color: #c080a0;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+    }
+    .history-item .del-btn:active { background: rgba(200,0,0,0.1); }
+    .empty-state {
+      text-align: center;
+      color: #b08ab8;
+      font-size: 14px;
+      padding: 40px 20px;
+    }
+
+    /* ── SETTINGS TAB ───────────────────────────────────────────────────── */
+    .settings-group {
+      margin-bottom: 20px;
+    }
+    .settings-group .label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #8a6a9a;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .settings-row {
+      background: rgba(255,255,255,0.4);
+      backdrop-filter: blur(2px);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .settings-row label {
+      font-size: 14px;
+      color: #3d2a4a;
+    }
+    .settings-row input,
+    .settings-row select,
+    .settings-row textarea {
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(200,160,210,0.2);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: #3d2a4a;
+      outline: none;
+      font-family: inherit;
+      width: auto;
+      min-width: 60px;
+    }
+    .settings-row textarea {
+      width: 100%;
+      min-height: 60px;
+      resize: vertical;
+      margin-top: 4px;
+    }
+    .settings-row .vpn-toggle {
+      width: 44px;
+      height: 24px;
+      background: #d4c0d8;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.25s;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .settings-row .vpn-toggle.active { background: #a855f7; }
+    .settings-row .vpn-toggle .knob {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 20px; height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.25s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .settings-row .vpn-toggle.active .knob { transform: translateX(20px); }
+
+    .settings-row .vpn-status {
+      font-size: 12px;
+      color: #8a6a9a;
+    }
+    .settings-row .vpn-status .on { color: #6fcf97; font-weight: 600; }
+    .settings-row .vpn-status .off { color: #e082a0; }
+
+    /* ── BOTTOM NAV ────────────────────────────────────────────────────── */
+    .bottom-nav {
+      display: flex;
+      background: rgba(255, 248, 250, 0.6);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+    .bottom-nav .tab-btn {
+      flex: 1;
+      padding: 10px 0 8px 0;
+      background: transparent;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #b08ab8;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-family: inherit;
+    }
+    .bottom-nav .tab-btn .icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .bottom-nav .tab-btn.active {
+      color: #6b4b7a;
+    }
+    .bottom-nav .tab-btn:active { opacity: 0.6; }
+
+    /* ── RESPONSIVE TWEAKS ────────────────────────────────────────────── */
+    @media (max-width: 420px) {
+      .header-title { font-size: 18px; }
+      .bubble { font-size: 14px; padding: 8px 12px; }
+      .input-area textarea { font-size: 14px; min-height: 38px; }
+      .fab { width: 48px; height: 48px; font-size: 24px; bottom: 72px; right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">✦ <span>Whimsy</span> S1</div>
+    <div class="header-status">
+      <span class="dot"></span> Online
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+
+    <!-- CHAT TAB -->
+    <div id="chatTab" class="tab-content active">
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="input-area">
+        <textarea id="userInput" rows="1" placeholder="Message Whimsy..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <!-- FAB for new chat -->
+      <button class="fab" id="fabNewChat" onclick="newChat()">✨</button>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="historyTab" class="tab-content">
+      <div style="padding: 4px 0 12px 0;">
+        <div style="font-size:13px; font-weight:600; color:#8a6a9a; margin-bottom:8px;">💬 Saved Chats</div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="settingsTab" class="tab-content">
+      <div style="padding: 4px 0 12px 0;">
+
+        <div class="settings-group">
+          <span class="label">🔒 VPN & Privacy</span>
+          <div class="settings-row">
+            <label>Enable VPN</label>
+            <div class="vpn-toggle" id="vpnToggle" onclick="toggleVPN()">
+              <div class="knob"></div>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-wrap:wrap; gap:6px;">
+            <label>Country</label>
+            <select id="vpnCountry" style="flex:1; min-width:80px;">
+              <option value="Iceland">🇮🇸 Iceland</option>
+              <option value="Switzerland">🇨🇭 Switzerland</option>
+              <option value="Norway">🇳🇴 Norway</option>
+              <option value="Sweden">🇸🇪 Sweden</option>
+              <option value="Finland">🇫🇮 Finland</option>
+              <option value="Germany">🇩🇪 Germany</option>
+              <option value="Netherlands">🇳🇱 Netherlands</option>
+              <option value="Canada">🇨🇦 Canada</option>
+              <option value="Japan">🇯🇵 Japan</option>
+            </select>
+          </div>
+          <div class="settings-row" style="flex-wrap:wrap; gap:6px;">
+            <label>Custom Proxy</label>
+            <input type="text" id="customProxy" placeholder="https://proxy.example.com/" style="flex:1; min-width:120px;" />
+          </div>
+          <div class="settings-row">
+            <span class="vpn-status" id="vpnStatus">VPN: Off</span>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <span class="label">🧠 AI Personality</span>
+          <div class="settings-row" style="flex-direction:column; align-items:stretch;">
+            <label style="margin-bottom:4px;">System Prompt</label>
+            <textarea id="sysPrompt" rows="3" style="width:100%;">You are Whimsy, a friendly, playful AI assistant with a touch of magic. You speak with warmth and creativity, always respectful of privacy. You keep responses concise but engaging.</textarea>
+          </div>
+          <div class="settings-row">
+            <label>Temperature</label>
+            <input type="number" id="tempInput" value="0.85" step="0.05" min="0" max="2" style="width:70px;" />
+          </div>
+          <div class="settings-row">
+            <label>Max Tokens</label>
+            <input type="number" id="maxTokensInput" value="1024" step="64" min="64" max="4096" style="width:80px;" />
+          </div>
+          <div class="settings-row">
+            <label>Model</label>
+            <input type="text" id="modelInput" value="meganova-ai/manta-mini-1.0" style="flex:1; min-width:100px;" />
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px;">
+            <button onclick="saveSettings()" style="flex:1; background:#c58bcf; border:none; border-radius:14px; padding:10px; color:white; font-weight:600; font-size:14px; cursor:pointer;">Save Settings</button>
+            <button onclick="clearAllData()" style="flex:1; background:rgba(200,160,210,0.2); border:none; border-radius:14px; padding:10px; color:#6b4b7a; font-weight:600; font-size:14px; cursor:pointer;">Clear All Data</button>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:10px; color:#b08ab8; margin-top:16px;">⬡ Whimsy S1 v1 · private AI</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="tab-btn active" data-tab="chatTab" onclick="switchTab('chatTab')">
+      <span class="icon">💬</span> Chat
+    </button>
+    <button class="tab-btn" data-tab="historyTab" onclick="switchTab('historyTab')">
+      <span class="icon">📜</span> History
+    </button>
+    <button class="tab-btn" data-tab="settingsTab" onclick="switchTab('settingsTab')">
+      <span class="icon">⚙️</span> Settings
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────────────────────
+  const DEFAULT_SYSTEM = "You are Whimsy, a friendly, playful AI assistant with a touch of magic. You speak with warmth and creativity, always respectful of privacy. You keep responses concise but engaging.";
+  let API_URL = "https://inference.meganova.ai/v1/chat/completions";
+  let API_KEY = "sk-2jILwgIhniXX2nT00DmB8w"; // Replace with your key
+  let MODEL   = "meganova-ai/manta-mini-1.0";
+  let TEMP    = 0.85;
+  let MAX_TOKENS = 1024;
+  let SYSTEM_PROMPT = DEFAULT_SYSTEM;
+
+  // ── STATE ──────────────────────────────────────────────────────────────
+  let conversation = [];
+  let currentChatId = null;
+  let isWaiting = false;
+  let vpnEnabled = false;
+  let vpnCountry = 'Iceland';
+  let customProxy = '';
+
+  // ── DOM REFS ──────────────────────────────────────────────────────────
+  const messagesEl = document.getElementById('chatMessages');
+  const inputEl = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const chatListEl = document.getElementById('historyList');
+  const vpnToggle = document.getElementById('vpnToggle');
+  const vpnStatus = document.getElementById('vpnStatus');
+  const vpnCountrySelect = document.getElementById('vpnCountry');
+  const customProxyInput = document.getElementById('customProxy');
+
+  // ── LOCAL STORAGE ────────────────────────────────────────────────────
+  function loadChats() {
+    const data = localStorage.getItem('whimsy_chats');
+    return data ? JSON.parse(data) : {};
+  }
+  function saveChats(chats) {
+    localStorage.setItem('whimsy_chats', JSON.stringify(chats));
+  }
+  function loadCurrentChatId() {
+    return localStorage.getItem('whimsy_current_chat') || null;
+  }
+  function saveCurrentChatId(id) {
+    if (id) localStorage.setItem('whimsy_current_chat', id);
+    else localStorage.removeItem('whimsy_current_chat');
+  }
+
+  // ── CHAT MANAGEMENT ──────────────────────────────────────────────────
+  function getChats() { return loadChats(); }
+
+  function saveConversation() {
+    if (!currentChatId) return;
+    const chats = getChats();
+    const title = conversation.length > 0 ? 
+      conversation[0].content.substring(0, 25) + (conversation[0].content.length > 25 ? '…' : '') : 
+      'Empty chat';
+    chats[currentChatId] = {
+      messages: conversation.slice(),
+      title: title,
+      timestamp: currentChatId
+    };
+    saveChats(chats);
+    renderHistory();
+  }
+
+  function loadChat(id) {
+    const chats = getChats();
+    if (!chats[id]) return;
+    currentChatId = id;
+    saveCurrentChatId(id);
+    conversation = chats[id].messages.slice();
+    renderMessages();
+    renderHistory();
+    switchTab('chatTab');
+  }
+
+  function newChat() {
+    if (conversation.length > 0 && !confirm('Start a new chat? Current will be saved.')) return;
+    saveConversation();
+    conversation = [];
+    currentChatId = Date.now().toString();
+    saveCurrentChatId(currentChatId);
+    renderMessages();
+    renderHistory();
+    switchTab('chatTab');
+    addSystemMessage('✨ New chat started.');
+  }
+
+  function deleteChat(id) {
+    const chats = getChats();
+    delete chats[id];
+    saveChats(chats);
+    if (currentChatId === id) {
+      conversation = [];
+      currentChatId = null;
+      saveCurrentChatId(null);
+      renderMessages();
+      renderHistory();
+    } else {
+      renderHistory();
+    }
+  }
+
+  function renderHistory() {
+    const chats = getChats();
+    const ids = Object.keys(chats).sort((a,b) => b - a);
+    const container = document.getElementById('historyList');
+    container.innerHTML = '';
+    if (ids.length === 0) {
+      container.innerHTML = '<div class="empty-state">No saved chats yet</div>';
+      return;
+    }
+    ids.forEach(id => {
+      const chat = chats[id];
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'title';
+      titleSpan.textContent = chat.title || 'Untitled';
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'time';
+      const d = new Date(parseInt(id));
+      timeSpan.textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const del = document.createElement('button');
+      del.className = 'del-btn';
+      del.textContent = '✕';
+      del.onclick = (e) => { e.stopPropagation(); deleteChat(id); };
+      item.appendChild(titleSpan);
+      item.appendChild(timeSpan);
+      item.appendChild(del);
+      item.onclick = () => loadChat(id);
+      container.appendChild(item);
+    });
+  }
+
+  // ── RENDER MESSAGES ──────────────────────────────────────────────────
+  function renderMessages() {
+    messagesEl.innerHTML = '';
+    if (conversation.length === 0) {
+      addSystemMessage('⬡ Whimsy S1 ready — private & local.');
+      addSystemMessage('💡 Enable VPN to hide your IP.');
+      return;
+    }
+    conversation.forEach(msg => {
+      if (msg.role === 'system') {
+        addSystemMessage(msg.content);
+        return;
+      }
+      const isUser = msg.role === 'user';
+      const isError = msg.role === 'error';
+      addMessage(msg.role, msg.content, isError);
+    });
+  }
+
+  function addSystemMessage(text) {
+    const div = document.createElement('div');
+    div.className = 'system-msg';
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    scrollToBottom();
+  }
+
+  function addMessage(role, content, isError = false) {
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${role}`;
+    if (isError) wrapper.classList.add('error');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = content;
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const avatar = role === 'user' ? '🧚' : (isError ? '⚠️' : '🪼');
+    meta.innerHTML = `<span class="avatar-icon">${avatar}</span> ${role === 'user' ? 'You' : (isError ? 'Error' : 'Whimsy')} · ${time}`;
+
+    wrapper.appendChild(bubble);
+    wrapper.appendChild(meta);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message bot';
+    wrapper.id = 'typingIndicator';
+    const bubble = document.createElement('div');
+    bubble.className = 'typing-indicator';
+    for (let i = 0; i < 3; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'typing-dot';
+      bubble.appendChild(dot);
+    }
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+  function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // ── SEND MESSAGE ──────────────────────────────────────────────────────
+  function sendMessage() {
+    if (isWaiting) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    addMessage('user', text);
+    conversation.push({ role: 'user', content: text });
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    saveConversation();
+
+    isWaiting = true;
+    sendBtn.disabled = true;
+    showTyping();
+
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...conversation
+    ];
+    const payload = {
+      model: MODEL,
+      messages: messages,
+      max_tokens: MAX_TOKENS,
+      temperature: TEMP,
+    };
+
+    let url = API_URL;
+    if (vpnEnabled) {
+      const proxy = customProxyInput.value.trim() || getProxyForCountry(vpnCountry);
+      if (proxy) {
+        if (proxy.includes('?')) {
+          url = proxy + encodeURIComponent(API_URL);
+        } else {
+          url = proxy + API_URL;
+        }
+      }
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`
+    };
+
+    fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      const reply = data.choices?.[0]?.message?.content?.trim() || 'No reply.';
+      conversation.push({ role: 'assistant', content: reply });
+      removeTyping();
+      addMessage('bot', reply);
+      saveConversation();
+    })
+    .catch(err => {
+      removeTyping();
+      addMessage('error', `Error: ${err.message}`, true);
+    })
+    .finally(() => {
+      isWaiting = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    });
+  }
+
+  function getProxyForCountry(country) {
+    const proxies = {
+      'Iceland': 'https://corsproxy.io/?',
+      'Switzerland': 'https://api.allorigins.win/raw?url=',
+      'Norway': 'https://cors-anywhere.herokuapp.com/',
+      'Sweden': 'https://thingproxy.freeboard.io/fetch/',
+      'Finland': 'https://proxy.cors.sh/',
+      'Germany': 'https://corsproxy.io/?',
+      'Netherlands': 'https://api.allorigins.win/raw?url=',
+      'Canada': 'https://cors-anywhere.herokuapp.com/',
+      'Japan': 'https://thingproxy.freeboard.io/fetch/'
+    };
+    return proxies[country] || '';
+  }
+
+  // ── INPUT HANDLING ──────────────────────────────────────────────────
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  // ── VPN ──────────────────────────────────────────────────────────────
+  function toggleVPN() {
+    vpnEnabled = !vpnEnabled;
+    vpnToggle.classList.toggle('active', vpnEnabled);
+    updateVpnStatus();
+    if (vpnEnabled) {
+      addSystemMessage(`🔒 VPN enabled (${vpnCountry}) — your IP is hidden.`);
+    } else {
+      addSystemMessage('🔓 VPN disabled — your IP is visible.');
+    }
+    localStorage.setItem('whimsy_vpn_state', vpnEnabled ? 'on' : 'off');
+  }
+
+  function updateVpnStatus() {
+    const statusEl = document.getElementById('vpnStatus');
+    if (vpnEnabled) {
+      const proxy = customProxyInput.value.trim() || getProxyForCountry(vpnCountry);
+      statusEl.innerHTML = `VPN: <span class="on">On</span> · ${vpnCountry} ${proxy ? '🔗' : ''}`;
+    } else {
+      statusEl.innerHTML = `VPN: <span class="off">Off</span>`;
+    }
+  }
+
+  // ── SETTINGS ─────────────────────────────────────────────────────────
+  function saveSettings() {
+    SYSTEM_PROMPT = document.getElementById('sysPrompt').value.trim() || DEFAULT_SYSTEM;
+    TEMP = parseFloat(document.getElementById('tempInput').value) || 0.85;
+    MAX_TOKENS = parseInt(document.getElementById('maxTokensInput').value) || 1024;
+    MODEL = document.getElementById('modelInput').value.trim() || 'meganova-ai/manta-mini-1.0';
+    addSystemMessage('⚙️ AI settings saved.');
+  }
+
+  function clearAllData() {
+    if (confirm('Delete all chats and reset settings?')) {
+      localStorage.removeItem('whimsy_chats');
+      localStorage.removeItem('whimsy_current_chat');
+      conversation = [];
+      currentChatId = null;
+      renderMessages();
+      renderHistory();
+      addSystemMessage('🗑️ All data cleared.');
+    }
+  }
+
+  // ── TAB SWITCHING ──────────────────────────────────────────────────
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+    if (tabId === 'historyTab') renderHistory();
+    if (tabId === 'settingsTab') {
+      // Load current settings into fields
+      document.getElementById('sysPrompt').value = SYSTEM_PROMPT;
+      document.getElementById('tempInput').value = TEMP;
+      document.getElementById('maxTokensInput').value = MAX_TOKENS;
+      document.getElementById('modelInput').value = MODEL;
+      updateVpnStatus();
+    }
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────
+  function init() {
+    // Load VPN state
+    const savedVpn = localStorage.getItem('whimsy_vpn_state');
+    if (savedVpn === 'on') {
+      vpnEnabled = true;
+      vpnToggle.classList.add('active');
+    }
+    vpnCountry = vpnCountrySelect.value;
+    updateVpnStatus();
+
+    // Load custom proxy
+    const savedProxy = localStorage.getItem('whimsy_custom_proxy');
+    if (savedProxy) customProxyInput.value = savedProxy;
+    customProxyInput.addEventListener('change', () => {
+      localStorage.setItem('whimsy_custom_proxy', customProxyInput.value.trim());
+      updateVpnStatus();
+    });
+    vpnCountrySelect.addEventListener('change', () => {
+      vpnCountry = vpnCountrySelect.value;
+      if (vpnEnabled) updateVpnStatus();
+    });
+
+    // Load last chat
+    const lastId = loadCurrentChatId();
+    const chats = getChats();
+    if (lastId && chats[lastId]) {
+      loadChat(lastId);
+    } else {
+      currentChatId = Date.now().toString();
+      saveCurrentChatId(currentChatId);
+      conversation = [];
+      renderMessages();
+    }
+    renderHistory();
+    inputEl.focus();
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(console.log);
+    }
+  }
+
+  window.onload = init;
+</script>
+</body>
+</html>
