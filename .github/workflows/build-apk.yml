@@ -13,26 +13,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install pwa2apk and dependencies
+      - name: Build APK with pwa2apk (Docker)
         run: |
-          # Install pwa2apk globally
-          npm install -g pwa2apk
-          # Install Chrome (required for headless rendering)
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-
-      - name: Build APK with pwa2apk
-        run: |
-          # pwa2apk expects a manifest.json and index.html in the current directory
-          # It will generate an APK in ./apk/
-          pwa2apk --input ./ --output ./apk --name "Whimsy S1" --package "com.whimsy.s1"
+          # Show files for debugging
+          ls -la
+          # Run pwa2apk inside the Docker container
+          docker run --rm -v $(pwd):/app bubenshchykov/pwa2apk \
+            pwa2apk --input /app --output /app/apk --name "Whimsy S1" --package "com.whimsy.s1"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
