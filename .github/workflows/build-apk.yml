@@ -43,43 +43,4 @@ jobs:
         with:
           name: Whimsy-S1-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: errorname: Build APK (Fallback)
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install Chrome (required for headless rendering)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-
-      - name: Install pwa2apk
-        run: npm install -g pwa2apk
-
-      - name: Build APK
-        run: |
-          # pwa2apk reads manifest.json from the current directory
-          pwa2apk --input ./ --output ./apk --name "Whimsy S1" --package "com.whimsy.s1"
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: whimsy-s1-apk
-          path: ./apk/*.apk
+          if-no-files-found: error
