@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build APK with pwa2apk (Docker)
         run: |
-          # Show files for debugging
-          ls -la
-          # Run pwa2apk inside the Docker container
-          docker run --rm -v $(pwd):/app bubenshchykov/pwa2apk \
-            pwa2apk --input /app --output /app/apk --name "Whimsy S1" --package "com.whimsy.s1"
+          # Run pwa2apk inside the official Docker image
+          docker run --rm -v "$(pwd)":/app bubenshchykov/pwa2apk \
+            pwa2apk --input /app --output /app/apk \
+                    --name "Whimsy S1" \
+                    --package "com.whimsy.s1"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
