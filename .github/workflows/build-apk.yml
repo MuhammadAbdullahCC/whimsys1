@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK (Fallback)
 
 on:
   push:
@@ -10,16 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build APK with pwa2apk (Docker)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Chrome (required for headless rendering)
         run: |
-          # Run pwa2apk inside the official Docker image
-          docker run --rm -v "$(pwd)":/app bubenshchykov/pwa2apk \
-            pwa2apk --input /app --output /app/apk \
-                    --name "Whimsy S1" \
-                    --package "com.whimsy.s1"
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
+
+      - name: Install pwa2apk
+        run: npm install -g pwa2apk
+
+      - name: Build APK
+        run: |
+          # pwa2apk reads manifest.json from the current directory
+          pwa2apk --input ./ --output ./apk --name "Whimsy S1" --package "com.whimsy.s1"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
