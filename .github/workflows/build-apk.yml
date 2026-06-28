@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "22"
-          package-manager-cache: false
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -28,9 +27,19 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Create npm project
+        run: |
+          cat > package.json <<'EOF'
+          {
+            "name": "whimsy-s1",
+            "version": "1.0.0",
+            "private": true
+          }
+          EOF
+
       - name: Install Capacitor
         run: |
-          npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Prepare web app folder
         run: |
